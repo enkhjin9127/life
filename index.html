@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    />
+    <title>Life 3.0 — Quiz</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: #f7f6f3;
+        color: #1a1a18;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+
+      .screen {
+        display: none;
+        width: 100%;
+        max-width: 400px;
+      }
+      .screen.active {
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── WAITING ── */
+      #waiting {
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+      }
+
+      .eyebrow {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: #8a8880;
+        text-transform: uppercase;
+      }
+
+      .big-title {
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .sub {
+        font-size: 14px;
+        color: #8a8880;
+        line-height: 1.6;
+      }
+
+      .dot-row {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 0.5rem;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #c4bfb6;
+        animation: pulse 1.4s ease-in-out infinite;
+      }
+      .dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.3;
+          transform: scale(0.8);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      /* ── QUESTION ── */
+      #question {
+        gap: 1.5rem;
+      }
+
+      .progress-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .progress-bar-bg {
+        flex: 1;
+        height: 4px;
+        background: #e8e6e0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        background: #1a1a18;
+        border-radius: 4px;
+        transition: width 0.4s ease;
+      }
+
+      .progress-label {
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: #8a8880;
+        white-space: nowrap;
+      }
+
+      .chapter-tag {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: #8a8880;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      .answer-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .opt-btn {
+        aspect-ratio: 1;
+        border-radius: 16px;
+        border: 1.5px solid #e8e6e0;
+        background: #ffffff;
+        font-family: "DM Mono", monospace;
+        font-size: 32px;
+        font-weight: 500;
+        color: #1a1a18;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          transform 0.12s,
+          background 0.15s,
+          border-color 0.15s;
+        user-select: none;
+      }
+
+      .opt-btn:active {
+        transform: scale(0.95);
+      }
+
+      .opt-btn.selected-correct {
+        background: #eaf4ee;
+        border-color: #2d6a4f;
+        color: #2d6a4f;
+        animation: correct-pop 0.35s ease;
+      }
+
+      .opt-btn.selected-wrong {
+        background: #faeaec;
+        border-color: #9b2335;
+        color: #9b2335;
+        animation: shake 0.35s ease;
+      }
+
+      .opt-btn.reveal-correct {
+        background: #eaf4ee;
+        border-color: #2d6a4f;
+        color: #2d6a4f;
+      }
+
+      .opt-btn.dim {
+        opacity: 0.25;
+      }
+
+      @keyframes correct-pop {
+        0% {
+          transform: scale(1);
+        }
+        40% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes shake {
+        0% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-6px);
+        }
+        75% {
+          transform: translateX(6px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+
+      .feedback-bar {
+        background: #ffffff;
+        border: 1px solid #e8e6e0;
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #1a1a18;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .fb-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .fb-text {
+        flex: 1;
+      }
+
+      /* ── RESULTS ── */
+      #results {
+        align-items: center;
+        text-align: center;
+        gap: 1.25rem;
+      }
+
+      .score-ring-wrap {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        margin: 0 auto;
+      }
+
+      .score-ring-wrap svg {
+        transform: rotate(-90deg);
+      }
+
+      .score-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .score-num {
+        font-family: "DM Mono", monospace;
+        font-size: 36px;
+        font-weight: 500;
+        color: #1a1a18;
+        line-height: 1;
+      }
+
+      .score-denom {
+        font-family: "DM Mono", monospace;
+        font-size: 13px;
+        color: #8a8880;
+      }
+
+      .result-title {
+        font-size: 24px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .result-sub {
+        font-size: 14px;
+        color: #8a8880;
+        line-height: 1.6;
+      }
+
+      .breakdown {
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #e8e6e0;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+
+      .breakdown-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 11px 16px;
+        border-bottom: 1px solid #f0eee9;
+        font-size: 13px;
+      }
+
+      .breakdown-row:last-child {
+        border-bottom: none;
+      }
+
+      .br-ch {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: #8a8880;
+        flex: 1;
+      }
+
+      .br-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .br-dot.correct {
+        background: #2d6a4f;
+      }
+      .br-dot.wrong {
+        background: #9b2335;
+      }
+
+      .play-again {
+        width: 100%;
+        padding: 14px;
+        background: #1a1a18;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        margin-top: 0.5rem;
+      }
+
+      .play-again:hover {
+        opacity: 0.85;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- WAITING -->
+    <div id="waiting" class="screen active">
+      <div class="eyebrow">Life 3.0 · Quiz Night</div>
+      <div class="big-title">Ready to play?</div>
+      <div class="sub">
+        Wait for the host to show the first question on screen, then tap your
+        answer here.
+      </div>
+      <div class="dot-row">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <button
+        class="opt-btn"
+        style="
+          aspect-ratio: unset;
+          padding: 14px 32px;
+          font-size: 16px;
+          font-family: &quot;DM Sans&quot;, sans-serif;
+          font-weight: 500;
+          margin-top: 1rem;
+          width: 100%;
+          border-radius: 12px;
+        "
+        onclick="goToQuestion()"
+      >
+        I'm ready →
+      </button>
+    </div>
+
+    <!-- QUESTION -->
+    <div id="question" class="screen">
+      <div class="progress-wrap">
+        <div class="progress-bar-bg">
+          <div
+            class="progress-bar-fill"
+            id="progress-fill"
+            style="width: 0%"
+          ></div>
+        </div>
+        <div class="progress-label" id="progress-label">1 / 12</div>
+      </div>
+
+      <div class="chapter-tag" id="chapter-tag">Ch 1</div>
+
+      <div class="answer-grid">
+        <button class="opt-btn" id="btn-A" onclick="selectAnswer(0)">A</button>
+        <button class="opt-btn" id="btn-B" onclick="selectAnswer(1)">B</button>
+        <button class="opt-btn" id="btn-C" onclick="selectAnswer(2)">C</button>
+        <button class="opt-btn" id="btn-D" onclick="selectAnswer(3)">D</button>
+      </div>
+
+      <div class="feedback-bar" id="feedback-bar" style="visibility: hidden">
+        <span class="fb-icon" id="fb-icon"></span>
+        <span class="fb-text" id="fb-text"></span>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results" class="screen">
+      <div class="eyebrow">Quiz complete</div>
+
+      <div class="score-ring-wrap">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle
+            cx="70"
+            cy="70"
+            r="58"
+            fill="none"
+            stroke="#E8E6E0"
+            stroke-width="10"
+          />
+          <circle
+            cx="70"
+            cy="70"
+            r="58"
+            fill="none"
+            stroke="#1A1A18"
+            stroke-width="10"
+            stroke-linecap="round"
+            stroke-dasharray="364.4"
+            stroke-dashoffset="364.4"
+            id="score-arc"
+          />
+        </svg>
+        <div class="score-center">
+          <div class="score-num" id="score-num">0</div>
+          <div class="score-denom" id="score-denom">/ 12</div>
+        </div>
+      </div>
+
+      <div class="result-title" id="result-title">Good effort!</div>
+      <div class="result-sub" id="result-sub">
+        Here's how you did question by question.
+      </div>
+
+      <div class="breakdown" id="breakdown"></div>
+
+      <button class="play-again" onclick="restart()">Play again</button>
+    </div>
+
+    <script>
+      const QUESTIONS = [
+        { ch: "Question 1", correct: 3 },
+        { ch: "Question 2", correct: 1 },
+        { ch: "Question 3", correct: 1 },
+        { ch: "Question 4", correct: 1 },
+        { ch: "Question 5", correct: 2 },
+        { ch: "Question 6", correct: 1 },
+        { ch: "Question 7", correct: 1 },
+        { ch: "Question 8", correct: 1 },
+        { ch: "Question 9", correct: 1 },
+        { ch: "Question 10", correct: 1 },
+        { ch: "Question 11", correct: 1 },
+        { ch: "Question 12", correct: 1 },
+      ];
+
+      const LABELS = ["A", "B", "C", "D"];
+      const FEEDBACK_CORRECT = [
+        "Correct!",
+        "Nailed it!",
+        "That's right!",
+        "Spot on!",
+        "Exactly!",
+      ];
+      const FEEDBACK_WRONG = [
+        "Not quite — the answer was",
+        "Wrong — correct answer was",
+        "Nope — it was",
+      ];
+
+      let current = 0;
+      let answered = false;
+      let results = [];
+
+      function show(id) {
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+      }
+
+      function goToQuestion() {
+        current = 0;
+        answered = false;
+        results = [];
+        loadQuestion();
+        show("question");
+      }
+
+      function loadQuestion() {
+        const q = QUESTIONS[current];
+        answered = false;
+
+        document.getElementById("chapter-tag").textContent = q.ch.toUpperCase();
+        document.getElementById("progress-label").textContent =
+          `${current + 1} / ${QUESTIONS.length}`;
+        document.getElementById("progress-fill").style.width =
+          (current / QUESTIONS.length) * 100 + "%";
+
+        LABELS.forEach((l, i) => {
+          const btn = document.getElementById("btn-" + l);
+          btn.className = "opt-btn";
+          btn.disabled = false;
+          btn.textContent = l;
+        });
+
+        const fb = document.getElementById("feedback-bar");
+        fb.style.visibility = "hidden";
+        document.getElementById("fb-text").textContent = "";
+        document.getElementById("fb-icon").textContent = "";
+      }
+
+      function selectAnswer(idx) {
+        if (answered) return;
+        answered = true;
+
+        const q = QUESTIONS[current];
+        const correct = idx === q.correct;
+        results.push({ ch: q.ch, correct, chosen: idx, answer: q.correct });
+
+        LABELS.forEach((l, i) => {
+          const btn = document.getElementById("btn-" + l);
+          btn.disabled = true;
+          if (i === q.correct) {
+            btn.classList.add("reveal-correct");
+          } else if (i === idx && !correct) {
+            btn.classList.add("selected-wrong");
+          } else {
+            btn.classList.add("dim");
+          }
+        });
+
+        const fb = document.getElementById("feedback-bar");
+        fb.style.visibility = "visible";
+
+        if (correct) {
+          const msg =
+            FEEDBACK_CORRECT[
+              Math.floor(Math.random() * FEEDBACK_CORRECT.length)
+            ];
+          document.getElementById("fb-icon").textContent = "✓";
+          document.getElementById("fb-text").textContent = msg;
+          fb.style.borderColor = "#2D6A4F";
+          fb.style.background = "#EAF4EE";
+          document.getElementById("fb-icon").style.color = "#2D6A4F";
+          document.getElementById("fb-text").style.color = "#2D6A4F";
+        } else {
+          const msg =
+            FEEDBACK_WRONG[Math.floor(Math.random() * FEEDBACK_WRONG.length)];
+          document.getElementById("fb-icon").textContent = "✗";
+          document.getElementById("fb-text").textContent =
+            `${msg} ${LABELS[q.correct]}`;
+          fb.style.borderColor = "#9B2335";
+          fb.style.background = "#FAEAEC";
+          document.getElementById("fb-icon").style.color = "#9B2335";
+          document.getElementById("fb-text").style.color = "#9B2335";
+        }
+
+        setTimeout(() => {
+          current++;
+          if (current < QUESTIONS.length) {
+            loadQuestion();
+          } else {
+            showResults();
+          }
+        }, 1800);
+      }
+
+      function showResults() {
+        const score = results.filter((r) => r.correct).length;
+        const total = QUESTIONS.length;
+        const pct = score / total;
+
+        document.getElementById("score-num").textContent = score;
+        document.getElementById("score-denom").textContent = "/ " + total;
+
+        const circumference = 364.4;
+        const arc = document.getElementById("score-arc");
+        arc.style.strokeDashoffset = circumference * (1 - pct);
+        arc.style.stroke =
+          pct >= 0.75 ? "#2D6A4F" : pct >= 0.5 ? "#1A1A18" : "#9B2335";
+        arc.style.transition = "stroke-dashoffset 0.8s ease, stroke 0.4s";
+
+        let title, sub;
+        if (pct === 1) {
+          title = "Perfect score!";
+          sub = "You read every word of that book.";
+        } else if (pct >= 0.75) {
+          title = "Really strong!";
+          sub = "You clearly paid attention during those presentations.";
+        } else if (pct >= 0.5) {
+          title = "Not bad at all.";
+          sub = "A few slipped through — check the slides for a refresher.";
+        } else if (pct >= 0.25) {
+          title = "Tough crowd.";
+          sub = "Maybe read the chapter summaries before next time.";
+        } else {
+          title = "Were you even there?";
+          sub = "It's okay. The book is still great. Consider reading it.";
+        }
+
+        document.getElementById("result-title").textContent = title;
+        document.getElementById("result-sub").textContent = sub;
+
+        document.getElementById("progress-fill").style.width = "100%";
+
+        const bd = document.getElementById("breakdown");
+        bd.innerHTML = results
+          .map(
+            (r, i) => `
+    <div class="breakdown-row">
+      <span class="br-ch">Q${i + 1} · ${r.ch}</span>
+      <div class="br-dot ${r.correct ? "correct" : "wrong"}"></div>
+    </div>`,
+          )
+          .join("");
+
+        show("results");
+      }
+
+      function restart() {
+        current = 0;
+        answered = false;
+        results = [];
+        show("waiting");
+      }
+    </script>
+  </body>
+</html>
